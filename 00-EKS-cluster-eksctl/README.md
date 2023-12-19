@@ -16,24 +16,27 @@ It will take 15 to 20 minutes to create the Cluster Control Plane
                           --zones=eu-west-2a,eu-west-2b \
                           --without-nodegroup 
 
-#Get list of nodes
+-- Get list of nodes
 
-  kubectl get node
+    kubectl get node
 
-#Get list of clusters
+-- Get list of clusters
 
-  eksctl get cluster 
+    eksctl get cluster 
 
-#Replace with region & cluster name
+-- Replace with region & cluster name
 
-    eksctl utils associate-iam-oidc-provider \
-        --region eu-west-2 \
-        --cluster jms-cluster \
-        --approve
+      eksctl utils associate-iam-oidc-provider \
+          --region eu-west-2 \
+          --cluster jms-cluster \
+          --approve
 
-# STEP-02: CREATE PUBLIC NODE GROUP
+# STEP-02: CREATE NODE GROUP
 
-#We create a key pair so whenever we create the node group it create worker node with ec2 instance if we want to access the instance we need to create a key pair and associate it
+- Public Node Group
+
+-- We create a key pair so whenever we create the node group it create worker node with ec2 instance if we want to access the instance we need to create a key pair and associate it
+
 
     eksctl create nodegroup --cluster=jms-cluster \
                             --region=eu-west-2 \
@@ -51,6 +54,34 @@ It will take 15 to 20 minutes to create the Cluster Control Plane
                             --full-ecr-access \
                             --appmesh-access \
                             --alb-ingress-access 
+
+- Private Node Group
+
+-- If we don't need to run any workload in the public subnet nodes we can delete the public node group using instructions in Step-03. The kubelet will communicate with the control plane via the NAT Gateway. 
+
+We then add the following option to the command --node-private-networking to create our public node group
+
+    eksctl create nodegroup --cluster=jms-cluster \
+                            --region=eu-west-2 \
+                            --name=jms-cluster-ng-private \
+                            --node-type=t2.medium\
+                            --nodes=2 \
+                            --nodes-min=2 \
+                            --nodes-max=4 \
+                            --node-volume-size=20 \
+                            --ssh-access \
+                            --ssh-public-key=eks-key\
+                            --managed \
+                            --asg-access \
+                            --external-dns-access \
+                            --full-ecr-access \
+                            --appmesh-access \
+                            --alb-ingress-access 
+                            --node-private-networking
+
+-- To verify that your node group has been created in the private subnet run the below command and look for EXTERNAL-IP : <none>
+
+     kubectl get nodes -o wide
 
 # STEP-03: DELETE NODE GROUP
 
@@ -95,7 +126,7 @@ In our project we will use MySQL db with persistent storage. We create a storage
 
 1) Create IAM policy 
 
-- Go to services -> IAM -> Create a Policy:
+-- Go to services -> IAM -> Create a Policy:
 
 Select JSON tab and copy paste the below JSON
 
@@ -131,11 +162,11 @@ Select JSON tab and copy paste the below JSON
 
 2) Get the IAM role Worker Nodes using and Associate this policy to that role
 
-#Get Worker node IAM Role ARN
+-- Get Worker node IAM Role ARN
 
     kubectl -n kube-system describe configmap aws-auth
 
-#from output check rolearn
+-- from output check rolearn
 
 rolearn: arn:aws:iam::180789647333:role/eksctl-eksdemo1-nodegroup-eksdemo-NodeInstanceRole-IJN07ZKXAWNN
 
