@@ -18,7 +18,7 @@ spec:
         image: joomla:3.4.8-apache
         env:
         - name: JOOMLA_DB_HOST
-          value: 192.168.58.255:3306
+          value: <192.168.25.124>:3306
         - name : JOOMLA_DB_PASSWORD
           value: YWRtaW4xMjM=
         ports:
