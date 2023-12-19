@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp-joomla
+spec:
+  selector:
+    matchLabels:
+      app: joomla
+  strategy: 
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: joomla
+    spec:
+      containers:
+      - name: joomla-app
+        image: joomla:3.4.8-apache
+        env:
+        - name: JOOMLA_DB_HOST
+          value: 192.168.58.255:3306
+        - name : JOOMLA_DB_PASSWORD
+          value: YWRtaW4xMjM=
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: joomla-persistent-storage
+          mountPath: /var/www/html
+      volumes: 
+      - name: joomla-persistent-storage
+        persistentVolumeClaim:
+          claimName: joomla-app-pv
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-joomla-svc
+spec:
+  type: LoadBalancer
+  selector:
+    app: joomla
+  ports:
+  - port: 80 # service port
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: joomla-app-pv
+  labels: 
+    app: joomla
+spec:
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: ebs-sc-joomla
+  accessModes:
+    - ReadWriteOnce
+
+
+
+

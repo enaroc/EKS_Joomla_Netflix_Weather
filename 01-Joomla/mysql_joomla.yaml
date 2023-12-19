@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-joomla
+spec:
+  selector:
+    matchLabels:
+      app: joomla
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: joomla
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:5.6
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: YWRtaW4xMjM=
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes: # We are mounting for our container one volume
+        - name: mysql-persistent-storage
+          persistentVolumeClaim: 
+            claimName: pvc-mysql-joomla #same name as PVC else scheduling will fail
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-joomla-svc
+spec:
+  selector:
+    app: joomla
+  ports:
+    - port: 3306
+  clusterIP: None
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-mysql-joomla
+  labels: 
+    app: joomla
+spec:
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: ebs-sc-mysql-jml
+  accessModes:
+    - ReadWriteOnce
+
+
