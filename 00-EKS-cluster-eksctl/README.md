@@ -8,68 +8,69 @@
 # STEP-01: CREATE EKS CLUSTER
 
 #Create Cluster
-#It will take 15 to 20 minutes to create the Cluster Control Plane 
 
-eksctl create cluster --name=jms-cluster \
-                      --region=eu-west-2 \
-                      --zones=eu-west-2a,eu-west-2b \
-                      --without-nodegroup 
+It will take 15 to 20 minutes to create the Cluster Control Plane 
+
+    eksctl create cluster --name=jms-cluster \
+                          --region=eu-west-2 \
+                          --zones=eu-west-2a,eu-west-2b \
+                          --without-nodegroup 
 
 #Get list of nodes
 
-kubectl get node
+  kubectl get node
 
 #Get list of clusters
 
-eksctl get cluster 
+  eksctl get cluster 
 
 #Replace with region & cluster name
 
-eksctl utils associate-iam-oidc-provider \
-    --region eu-west-2 \
-    --cluster jms-cluster \
-    --approve
+    eksctl utils associate-iam-oidc-provider \
+        --region eu-west-2 \
+        --cluster jms-cluster \
+        --approve
 
 # STEP-02: CREATE NODE GROUP
 
 #We create a key pair so whenever we create the node group it create worker node with ec2 instance if we want to access the instance we need to create a key pair and associate it
 
-eksctl create nodegroup --cluster=jms-cluster \
-                        --region=eu-west-2 \
-                        --name=jms-cluster-ng-public3 \
-                        --node-type=t2.medium\
-                        --nodes=2 \
-                        --nodes-min=2 \
-                        --nodes-max=4 \
-                        --node-volume-size=20 \
-                        --ssh-access \
-                        --ssh-public-key=eks-key\
-                        --managed \
-                        --asg-access \
-                        --external-dns-access \
-                        --full-ecr-access \
-                        --appmesh-access \
-                        --alb-ingress-access 
+    eksctl create nodegroup --cluster=jms-cluster \
+                            --region=eu-west-2 \
+                            --name=jms-cluster-ng-public3 \
+                            --node-type=t2.medium\
+                            --nodes=2 \
+                            --nodes-min=2 \
+                            --nodes-max=4 \
+                            --node-volume-size=20 \
+                            --ssh-access \
+                            --ssh-public-key=eks-key\
+                            --managed \
+                            --asg-access \
+                            --external-dns-access \
+                            --full-ecr-access \
+                            --appmesh-access \
+                            --alb-ingress-access 
 
 # STEP-03: DELETE NODE GROUP
 
 #List EKS Clusters
 
-eksctl get clusters
+  eksctl get clusters
 
 #Capture Node Group name
 
-eksctl get nodegroup --cluster=<clusterName>
+  eksctl get nodegroup --cluster=<clusterName>
 
 #Delete Node Group
 
-eksctl delete nodegroup --cluster=<clusterName> --name=<nodegroupName>
+  eksctl delete nodegroup --cluster=<clusterName> --name=<nodegroupName>
 
 STEP-04: DELETE CLUSTER
 
 #Delete Cluster
 
-eksctl delete cluster <clusterName>
+  eksctl delete cluster <clusterName>
 
 # Important Notes
 
@@ -131,7 +132,7 @@ Step-02: Get the IAM role Worker Nodes using and Associate this policy to that r
 
 #Get Worker node IAM Role ARN
 
-kubectl -n kube-system describe configmap aws-auth
+    kubectl -n kube-system describe configmap aws-auth
 
 #from output check rolearn
 
@@ -147,12 +148,12 @@ Step-03: Deploy Amazon EBS CSI Driver
 
 #Verify kubectl version, it should be 1.14 or later
 
-kubectl version --client --short
+  kubectl version --client --short
 
 #Deploy EBS CSI Driver
 
-kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=master"
+  kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=master"
 
 #Verify ebs-csi pods running
 
-kubectl get pods -n kube-system
+  kubectl get pods -n kube-system
