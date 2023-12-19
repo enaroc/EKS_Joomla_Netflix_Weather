@@ -1,0 +1,6 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ebs-sc-mysql-netflix
+provisioner: ebs.csi.aws.com
+volumeBindingMode: WaitForFirstConsumer # will delay the volume binding and provisionning of a PersistentVolume until a Pod using the PersistentVolumeClaim is created

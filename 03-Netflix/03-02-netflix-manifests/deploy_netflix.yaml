@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: netflix-app
+spec:
+  selector:
+    matchLabels:
+      app: netflix
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: netflix
+    spec:
+      imagePullSecrets:
+        - name: dockerhublogin
+      containers:
+      - name: media
+        image: odevops/netflix # customize docker image created pulled from container registry                     
+        env:
+          - name: Netflix_Host
+            value: 192.168.31.187:3306
+          - name: Netflix_Password
+            value: YWRtaW4xMjM=
+        ports:
+        - containerPort: 8000 # port where app is reachable defined in code
+        command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: netflix-svc
+spec:
+  selector:
+    app: netflix
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8000
+
+---
+
