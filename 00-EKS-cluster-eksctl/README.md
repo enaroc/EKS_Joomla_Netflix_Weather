@@ -31,7 +31,7 @@ It will take 15 to 20 minutes to create the Cluster Control Plane
         --cluster jms-cluster \
         --approve
 
-# STEP-02: CREATE NODE GROUP
+# STEP-02: CREATE PUBLIC NODE GROUP
 
 #We create a key pair so whenever we create the node group it create worker node with ec2 instance if we want to access the instance we need to create a key pair and associate it
 
@@ -54,25 +54,26 @@ It will take 15 to 20 minutes to create the Cluster Control Plane
 
 # STEP-03: DELETE NODE GROUP
 
-#List EKS Clusters
+-- List EKS Clusters
 
-  eksctl get clusters
+    eksctl get clusters
 
-#Capture Node Group name
+-- Capture Node Group name
 
-  eksctl get nodegroup --cluster=<clusterName>
+    eksctl get nodegroup --cluster=<clusterName>
 
-#Delete Node Group
+-- Delete Node Group
 
-  eksctl delete nodegroup --cluster=<clusterName> --name=<nodegroupName>
+    eksctl delete nodegroup --cluster=<clusterName> --name=<nodegroupName>
 
-STEP-04: DELETE CLUSTER
+# STEP-04: DELETE CLUSTER
 
-#Delete Cluster
+-- Delete Cluster
 
-  eksctl delete cluster <clusterName>
+    eksctl delete cluster <clusterName>
 
-# Important Notes
+
+NOTES:
 
 - Note-1: Rollback any Security Group Changes
 
@@ -88,13 +89,13 @@ When we are doing EBS Storage Section with EBS CSI Driver we will add a custom p
 When you are deleting the cluster, first roll back that change and delete it.
 This way we don't face any issues during cluster deletion.
 
-# Create EBS CSI DRIVER 
-#In our project we will use MySQL db with persistent storage. We create a storage class to dynamically provision a volume. We need to create an IAM policy and attach it to the IAM role worker node and deploy Amazon EBS CSI driver in our cluster
+# STEP-05: Create EBS CSI DRIVER 
 
-Step-01: Create IAM policy 
+In our project we will use MySQL db with persistent storage. We create a storage class to dynamically provision a volume. We need to create an IAM policy and attach it to the IAM role worker node and deploy Amazon EBS CSI driver in our cluster
 
-- Go to services -> IAM
-- Create a Policy:
+1) Create IAM policy 
+
+- Go to services -> IAM -> Create a Policy:
 
 Select JSON tab and copy paste the below JSON
 
@@ -128,7 +129,7 @@ Select JSON tab and copy paste the below JSON
 - Description: Policy for EC2 instances to access Elastic Block Store
 - Click on Create Policy
 
-Step-02: Get the IAM role Worker Nodes using and Associate this policy to that role
+2) Get the IAM role Worker Nodes using and Associate this policy to that role
 
 #Get Worker node IAM Role ARN
 
@@ -144,16 +145,16 @@ rolearn: arn:aws:iam::180789647333:role/eksctl-eksdemo1-nodegroup-eksdemo-NodeIn
 - Click on Attach Policies
 - Search for Amazon_EBS_CSI_Driver and click on Attach Policy
 
-Step-03: Deploy Amazon EBS CSI Driver
+3) Deploy Amazon EBS CSI Driver
 
-#Verify kubectl version, it should be 1.14 or later
+-- Verify kubectl version, it should be 1.14 or later
 
-  kubectl version --client --short
+    kubectl version --client --short
 
-#Deploy EBS CSI Driver
+-- Deploy EBS CSI Driver
 
-  kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=master"
+   kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=master"
 
-#Verify ebs-csi pods running
+-- Verify ebs-csi pods running
 
-  kubectl get pods -n kube-system
+    kubectl get pods -n kube-system
