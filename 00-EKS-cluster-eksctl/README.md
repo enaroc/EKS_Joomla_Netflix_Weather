@@ -79,7 +79,7 @@ We then add the following option to the command --node-private-networking to cre
                             --alb-ingress-access \
                             --node-private-networking
 
-![Alt text](image-1.png)
+![Alt text](private-node-group.png)
 
 -- To verify EKS Node groups
 
