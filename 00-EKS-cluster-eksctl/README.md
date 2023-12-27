@@ -15,6 +15,7 @@ It will take 15 to 20 minutes to create the Cluster Control Plane
                           --region=eu-west-2 \
                           --zones=eu-west-2a,eu-west-2b \
                           --without-nodegroup 
+    #It will create a VPC with 2 AZ's and without nodegroup as we will specify our rndoegroup requirements later on
 
 -- Get list of nodes
 
@@ -98,113 +99,8 @@ We then add the following option to the command --node-private-networking to cre
 When we create an EKS cluster automatically a kube config will be created located in 
 $ cat $HOME/.kube/config
 
-- Create IAM policy for the AWS Load Balancer Controller that allows it to make calls to AWS APIs on your behalf.
 
--- Dowload the latest IAM policy
-(outline the permissions)
-    curl -o iam_policy_latest.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/main/docs/install/iam_policy.json
-
--- Verify latest
-    ls -lrta 
-
--- Download specific version
-    curl -o iam_policy_v2.3.1.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.3.1/docs/install/iam_policy.json
-
--- Create IAM Policy using policy downloaded and make note of the arn: as it will be reference in upcoming tasks
-
-    aws iam create-policy \
-        --policy-name AWSLoadBalancerControllerIAMPolicy \
-        --policy-document file://iam_policy_latest.json
-
-        {
-    "Policy": {
-        "PolicyName": "AWSLoadBalancerControllerIAMPolicy",
-        "PolicyId": "ANPASCMAV3EEDAW3S4FFA",
-        "Arn": "arn:aws:iam::142540658952:policy/AWSLoadBalancerControllerIAMPolicy",
-        "Path": "/",
-        "DefaultVersionId": "v1",
-        "AttachmentCount": 0,
-        "PermissionsBoundaryUsageCount": 0,
-        "IsAttachable": true,
-        "CreateDate": "2023-12-21T11:37:38+00:00",
-        "UpdateDate": "2023-12-21T11:37:38+00:00"
-    }
-
--- Create IAM Role for the AWS LoadBalancer Controller and attahc the role to the Kubernetes service account
-
-We can use ekstl with a single command :
- 1. Create an AWS IAM role with eksctl
- 2. Create Kubernetes Service Account in k8s cluster
- 3. Bound IAM role created and the kubernetes service account created
-
--- Verify if any existing service account
-    kubectl get sa -n kube-system
-    kubectl get sa aws-load-balancer-controller -n kube-system
-Observation:
- Nothing with name "aws-load-balancer-controller" should exist
-
--- Template to create sa
-    eksctl create iamserviceaccount \
-      --cluster=jms-cluster \
-      --namespace=kube-system \
-      --name=aws-load-balancer-controller \
-      --attach-policy-arn=arn:aws:iam::142540658952:policy/AWSLoadBalancerControllerIAMPolicy \
-      --override-existing-serviceaccounts \
-      --approve
-
- #Note:  K8S Service Account Name that need to be bound to newly created IAM Role
-
--- Replaced name, cluster and policy arn (Policy arn we took note in step-02)
-    eksctl create iamserviceaccount \
-      --cluster=eksdemo1 \
-      --namespace=kube-system \
-      --name=aws-load-balancer-controller \
-      --attach-policy-arn=arn:aws:iam::142540658952:policy/AWSLoadBalancerControllerIAMPolicy \
-      --override-existing-serviceaccounts \
-      --approve
-
-# STEP-03: DELETE NODE GROUP
-
--- List EKS Clusters
-
-    eksctl get clusters
-
--- Capture Node Group name
-
-    eksctl get nodegroup --cluster=<clusterName>
-
--- Delete Node Group
-
-    eksctl delete nodegroup --cluster=<clusterName> --name=<nodegroupName>
-    eksctl delete nodegroup --cluster=<clusterName> --name=<nodegroupName> --drain=false
-# STEP-04: DELETE CLUSTER
-
--- Delete Cluster
-
-    eksctl delete cluster <clusterName>
-
-
-NOTES:
-
-- Note-1: Rollback any Security Group Changes
-
-When we create a EKS cluster using eksctl it creates the worker node security group with only port 22 access.
-We will be creating many NodePort Services to access and test our applications via browser.
-
-During this process, we need to add an additional rule to this automatically created security group, allowing access to  applications we have deployed.
-So the point we need to understand here is when we are deleting the cluster using eksctl, its core components should be in same state which means roll back the change we have done to security group before deleting the cluster.
-
-In this way, cluster will get deleted without any issues, else we might have issues and we need to refer cloudformation events and manually delete few things. In short, we need to go to many places for deletions.
-
-- Note-2: Rollback any EC2 Worker Node Instance Role - Policy changes
-
-When we are doing EBS Storage Section with EBS CSI Driver we will add a custom policy to worker node IAM role.
-
-When you are deleting the cluster, first roll back that change and delete it.
-
-This way we don't face any issues during cluster deletion.
-
-# STEP-05: Create EBS CSI DRIVER 
+# STEP-03: Create EBS CSI DRIVER 
 
 In our project we will use MySQL db with persistent storage. We create a storage class to dynamically provision a volume. We need to create an IAM policy and attach it to the IAM role worker node and deploy Amazon EBS CSI driver in our cluster
 
@@ -268,8 +164,91 @@ rolearn: arn:aws:iam::180789647333:role/eksctl-eksdemo1-nodegroup-eksdemo-NodeIn
 
 -- Deploy EBS CSI Driver
 
-   kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=master"
+    kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=master"
 
 -- Verify ebs-csi pods running
 
     kubectl get pods -n kube-system
+
+
+#  STEP-04: Create an External dns 
+
+-- Create IAM Policy
+-- Name: AllowExternalDNSUpdates
+-- Description: Allow access to Route53 Resources for ExternalDNS
+-- Make a note of the policy ARN
+        {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+            "Effect": "Allow",
+            "Action": [
+                "route53:ChangeResourceRecordSets"
+            ],
+            "Resource": [
+                "arn:aws:route53:::hostedzone/*"
+            ]
+            },
+            {
+            "Effect": "Allow",
+            "Action": [
+                "route53:ListHostedZones",
+                "route53:ListResourceRecordSets"
+            ],
+            "Resource": [
+                "*"
+            ]
+            }
+        ]
+        }
+
+
+# STEP-05: Create IAM, k8s Service Account and Associate IAM policy
+
+-- This step create a k8s service account and AWS IAM role and associate them by annotating the role ARN in Service Account
+
+        eksctl create iamserviceaccount \
+            --name ext-dns \
+            --namespace wfa \
+            --cluster jms-cluster \
+            --attach-policy-arn arn:aws:iam::142540658952:policy/AllowExternalDNSUpdates \
+            --approve \
+            --override-existing-serviceaccounts
+
+-- Get the IAM Role ARN with teh below command 
+
+     eksctl get iamserviceaccount --cluster jms-cluster
+
+-- Deploy external DNS
+    kubectl apply -f kube-manifests/
+
+-- List All resources from default Namespace
+    kubectl get all
+
+-- List pods (external-dns pod should be in running state)
+    kubectl get pods
+
+-- Verify Deployment by checking logs
+    kubectl logs -f $(kubectl get po | egrep -o 'external-dns[A-Za-z0-9-]+')
+
+
+# STEP-06: DELETE NODE GROUP
+
+-- List EKS Clusters
+
+    eksctl get clusters
+
+-- Capture Node Group name
+
+    eksctl get nodegroup --cluster=<clusterName>
+
+-- Delete Node Group
+
+    eksctl delete nodegroup --cluster=<clusterName> --name=<nodegroupName>
+    eksctl delete nodegroup --cluster=<clusterName> --name=<nodegroupName> --drain=false
+# STEP-07: DELETE CLUSTER
+
+-- Delete Cluster
+
+    eksctl delete cluster <clusterName>
+
