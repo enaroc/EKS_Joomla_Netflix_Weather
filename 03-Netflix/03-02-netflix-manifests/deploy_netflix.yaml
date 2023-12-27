@@ -16,12 +16,12 @@ spec:
         - name: dockerhublogin
       containers:
       - name: media
-        image: odevops/netflix # customize docker image created pulled from container registry                     
+        image: odevops/netflix:3 # customize docker image created pulled from container registry                     
         env:
           - name: Netflix_Host
-            value: 192.168.31.187:3306
+            value: 192.168.217.59:3306
           - name: Netflix_Password
-            value: YWRtaW4xMjM=
+            value: AORtaW4xMjM=
         ports:
         - containerPort: 8000 # port where app is reachable defined in code
         command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
@@ -31,10 +31,12 @@ apiVersion: v1
 kind: Service
 metadata:
   name: netflix-svc
+  annotations: 
+    alb.ingress.kubernetes.io/healthcheck-path: /netflix-app #Need to add health check path annotations in service level if planning to use multiple target in load balancer
 spec:
   selector:
-    app: netflix
-  type: LoadBalancer
+    app: netflix # any traffic coming to this service will be sent the the pod with mathing labels
+  type: NodePort
   ports:
   - port: 80
     targetPort: 8000
