@@ -15,8 +15,11 @@ For this project we will be required to:
 - Create a domain name in AWS 
 
 00-EKS = Instruction to create EKS cluster 
+
 01-Joomla = manifest for Joomla application
+
 02-Weather = source code + manifests for Weather Flask application
+
 03-Django_netflix = source code + manifests for netflix application
 
 
