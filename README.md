@@ -163,6 +163,7 @@ kubernetes.io/ingress.class:alb annotation.
 
 
 The ALB ingress controller supports two traffic modes
+
 -- Instance mode:
 - registers nodes within the cluster as targets for the ALB
 - traffic reaching ALB is routed to NodePort for your service and proxied to pods
@@ -206,9 +207,11 @@ The kubernetes administrator deploye the Ingress k8s manifest and the AWS load b
     curl -o iam_policy_latest.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/main/docs/install/iam_policy.json
 
 -- Verify latest
+
     ls -lrta 
 
 -- Download specific version
+
     curl -o iam_policy_v2.3.1.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.3.1/docs/install/iam_policy.json
 
 -- Create IAM Policy using policy downloaded and make note of the arn: as it will be reference in upcoming tasks
@@ -238,42 +241,48 @@ We can use ekstl with a single command :
  - Create Kubernetes Service Account in k8s cluster
  - Bound IAM role created and the kubernetes service account created
 
--- Verify if any existing service account
-    kubectl get sa -n kube-system
-    kubectl get sa aws-load-balancer-controller -n kube-system
+-- Verify if any existing service account:
+
+        kubectl get sa -n kube-system
+
+        kubectl get sa aws-load-balancer-controller -n kube-system
+
 Observation:
+
  Nothing with name "aws-load-balancer-controller" should exist
 
 -- Template to create sa
-    eksctl create iamserviceaccount \
-      --cluster=jms-cluster \
-      --namespace=kube-system \
-      --name=aws-load-balancer-controller \
-      --attach-policy-arn=arn:aws:iam::142540658952:policy/AWSLoadBalancerControllerIAMPolicy \
-      --override-existing-serviceaccounts \
-      --approve
+
+        eksctl create iamserviceaccount \
+        --cluster=jms-cluster \
+        --namespace=kube-system \
+        --name=aws-load-balancer-controller \
+        --attach-policy-arn=arn:aws:iam::142540658952:policy/AWSLoadBalancerControllerIAMPolicy \
+        --override-existing-serviceaccounts \
+        --approve
 
  #Note:  K8S Service Account Name that need to be bound to newly created IAM Role
 
 -- Replaced name, cluster and policy arn (Policy arn we took note in earlier)
-    eksctl create iamserviceaccount \
-      --cluster=eksdemo1 \
-      --namespace=kube-system \
-      --name=aws-load-balancer-controller \
-      --attach-policy-arn=arn:aws:iam::142540658952:policy/AWSLoadBalancerControllerIAMPolicy \
-      --override-existing-serviceaccounts \
-      --approve
+
+        eksctl create iamserviceaccount \
+        --cluster=eksdemo1 \
+        --namespace=kube-system \
+        --name=aws-load-balancer-controller \
+        --attach-policy-arn=arn:aws:iam::142540658952:policy/AWSLoadBalancerControllerIAMPolicy \
+        --override-existing-serviceaccounts \
+        --approve
 
 -- Verify  IAM service account using eksctl
 
-    eksctl  get iamserviceaccount --cluster jms-cluster
+        eksctl  get iamserviceaccount --cluster jms-cluster
 
 -- Verify K8S service account using eksctl
 
-    kubectl get sa -n kube-system
-    kubectl get sa aws-load-balancer-controller -n kube-system
-    Observation:
-    1. We should see a new Service account created. 
+        kubectl get sa -n kube-system
+        kubectl get sa aws-load-balancer-controller -n kube-system
+        Observation:
+        1. We should see a new Service account created. 
 
 -- Describe Service Account aws-load-balancer-controller
     kubectl describe sa aws-load-balancer-controller -n kube-system
@@ -284,13 +293,13 @@ Observation:
 
 https://helm.sh/docs/intro/install/
 
--- Add the eks-charts repository.
+-- Add the eks-charts repository
 
     helm repo add eks https://aws.github.io/eks-charts
 
--- Update your local repo to make sure that you have the most recent charts.
-    helm repo update
+-- Update your local repo to make sure that you have the most recent charts
 
+    helm repo update
 
 -- Install the AWS Load Balancer Controller.
 
@@ -319,19 +328,24 @@ https://helm.sh/docs/intro/install/
       --set image.repository=602401143452.dkr.ecr.eu-west-2.amazonaws.com/amazon/aws-load-balancer-controller
 
 -- Verify that the controller is installed.
-    kubectl -n kube-system get deployment 
-    kubectl -n kube-system get deployment aws-load-balancer-controller
-    kubectl -n kube-system describe deployment aws-load-balancer-controller
+
+        kubectl -n kube-system get deployment 
+        kubectl -n kube-system get deployment aws-load-balancer-controller
+        kubectl -n kube-system describe deployment aws-load-balancer-controller
 
 -- Verify AWS Load Balancer Controller Webhook service created
-    kubectl -n kube-system get svc 
-    kubectl -n kube-system get svc aws-load-balancer-webhook-service
-    kubectl -n kube-system describe svc aws-load-balancer-webhook-service
+
+        kubectl -n kube-system get svc 
+        kubectl -n kube-system get svc aws-load-balancer-webhook-service
+        kubectl -n kube-system describe svc aws-load-balancer-webhook-service
 
 --  Verify Labels in Service and Selector Labels in Deployment
-kubectl -n kube-system get svc aws-load-balancer-webhook-service -o yaml
-kubectl -n kube-system get deployment aws-load-balancer-controller -o yaml
+
+    kubectl -n kube-system get svc aws-load-balancer-webhook-service -o yaml
+    kubectl -n kube-system get deployment aws-load-balancer-controller -o yaml
+
 Observation:
+
 1. Verify "spec.selector" label in "aws-load-balancer-webhook-service"
 2. Compare it with "aws-load-balancer-controller" Deployment "spec.selector.matchLabels"
 3. Both values should be same which traffic coming to "aws-load-balancer-webhook-service" on port 443 will be sent to port 9443 on "aws-load-balancer-controller" deployment related pods. 
@@ -400,9 +414,9 @@ It Helps our applcaition to scale out to meet increased demand or scale in when 
 
 When we set a target CPU utilisation percentage, the HPA scales our application in or out to try and meet that target.
 
-The HPA needs k8s metric server installed to verify the CPU of a pod
+The HPA needs k8s metric server installed to verify the CPU of pods.
 
-We do not need to deploy or install the HPA on our cluster to begin scaling our applciations, it's available as a default kubernetes APU resource.
+We do not need to deploy or install the HPA on our cluster to begin scaling our applications, it's available as a default kubernetes API resource.
 
 - How does it work ?
 
@@ -433,17 +447,17 @@ HPA requires:
 
 NOTE: To get the latest metrics server releases 
 
-    https://github.com/kubernetes-sigs/metrics-server/releases
+        https://github.com/kubernetes-sigs/metrics-server/releases
 
--- Verify that it's been installed
+        -- Verify that it's been installed
 
-    kubectl get deployment metrics-server -n kube-system    
+        kubectl get deployment metrics-server -n kube-system    
 
--- Deploy HPA deployment
+        -- Deploy HPA deployment
 
-    kubectl apply -f deploy_hpa.yaml
+        kubectl apply -f deploy_hpa.yaml
 
--- Create HPA resource for our applications
+        -- Create HPA resource for our applications
 
 2) Create HPA resource for each applications and generate load 
 
@@ -459,7 +473,9 @@ Template to run a test
     kubectl autoscale deployment hpa-demo-deployment --cpu-percent=50 --min=1 --max=10
     kubectl run -i --tty load-generator --rm --image=busybox:1.28 --restart=Never -- /bin/sh -c "while sleep 0.01; do wget -q -O- http://php-apache; done"
 
-NOTE: This creates an autoscaler that targets 50 percent CPUutilization with a minimum of one pod and maximum of 10 pods.
+NOTE: 
+
+This creates an autoscaler that targets 50 percent CPUutilization with a minimum of one pod and maximum of 10 pods.
 
 When the average CPU load is below 50% the autoscaler tries to reduce the number of pods in teh deploymnet to a minimum of 1
 
@@ -489,13 +505,14 @@ Template for the joomla app
 
     kubectl get hpa hpa-joomla-app --watch
     
+Alternatively follow instructions here : 
 
 https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/
 
 
 - Using an declarative approach  
 
-Create a HPA k8s manifest 
+ Create a HPA k8s manifest 
 
 3) verify how HPA is working   
 
