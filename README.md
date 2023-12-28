@@ -370,33 +370,150 @@ On the AWS console use the Route 53 service and follow the instructions to  crea
 
 5) Create Ingress manifest and add an External DNS Annotation with 3 DNS names
 
-As follow
-    external-dns.alpha.kubernetes.io/hostname: weather.aicintech.com, netflix.aicintech.com, joomla.aicintech.com
+-- Add the following annotation to your ingress manifest replace it with your choser records.
+    
+    external-dns.alpha.kubernetes.io/hostname: weather.<domainname>.com, netflix.<domainname>.com, shop.<domainname>.com
 
-Configure Host based routing in ingress deployement as explained above
-
-(Run this command)
+-- Configure Host based routing in ingress deployement as explained above
 
     kubectl apply -f ingress.yaml
 
-(Verify)
+-- Verify the 3 records heve been created in your AWS account. 
 
-(On AWS account)
 
-In the hosted zone , verify that 3 record have been created
+-- On the browser access your application on the browser as follow:
 
-(On the browser)
+     weather.<domainname>.com goes to weather flask app related backend
 
-access your application as follow:
+     netflix.<domainname>.com goes to netflix clone related backend
 
-    - shop.application.com goes to joomla related backend
+     shop.<domainname>.com goes to joomla related backend
 
-    - weather.application.com goes to weather flask app related backend
-
-    - netflix.application.com goes to netflix clone related backend
-
-# STEP 6:  Additonal resources to be configured
+# STEP 6:  Horizontal Pod Autoscaling (HPA)
  
-- Create horizontal pod autoscaler
-- Create pod disruption budget
 
+- What is HPA ?
+
+Increasing and decreasing the number of Replicas (Pods).It automatically scales the number of pods in a deployment, replica set, stateful set based on the resource's CPU Utilization or other metrics.
+
+It Helps our applcaition to scale out to meet increased demand or scale in when resources are not needed.
+
+When we set a target CPU utilisation percentage, the HPA scales our application in or out to try and meet that target.
+
+The HPA needs k8s metric server installed to verify the CPU of a pod
+
+We do not need to deploy or install the HPA on our cluster to begin scaling our applciations, it's available as a default kubernetes APU resource.
+
+- How does it work ?
+
+In k8s cluster When you deploy application using deployment, ReplciaSet, Replication Controller , StatefulSet which is going to span pods to deploy our applcaition container.
+
+We deploy a default k8s metrics server available for us and the pods metrics are sent to respective metric server. When we deploy HPA for our applciation it's going to query for metrics and once it gets it it will calculate the number of replicas the autoscaler need to increase or decrease and scale the applciation to the desired replicas which will increase or decrease the number of pods in our respective application.
+
+The process of collecting the metrics, calculating the replies and trigger scaling request is called a control loop which is executed every 15 seconds.
+
+- How is HPA configured ?
+
+HPA requires:
+- Scaling metric Ex: CPU utilization
+- Target value Ex: CPU = 50% In the metric once the CPU has reached 50% you can scale in or out based on that
+- Min Replicas = 2
+- Max Replicas = 10
+
+
+1) Install Metrics Server
+
+-- Verify if Metrics Server is already isntalled
+
+    kubectl -n kube-system get deployment/metrics-server    
+
+-- Install Metrics Server
+
+    kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.6.4/components.yaml
+
+NOTE: To get the latest metrics server releases 
+
+    https://github.com/kubernetes-sigs/metrics-server/releases
+
+-- Verify that it's been installed
+
+    kubectl get deployment metrics-server -n kube-system    
+
+-- Deploy HPA deployment
+
+    kubectl apply -f deploy_hpa.yaml
+
+-- Create HPA resource for our applications
+
+2) Create HPA resource for each applications and generate load 
+
+-- Create individual HPAs for each application enable granular monitoring and scaling 
+
+-- Create shared HPA for application with similar resource requirements or scaling behaviours allow resource optimization
+
+- Using an imperative approach   
+
+Template to run a test 
+
+    kubectl autoscale deployment <deployment> --metric=<targetValue> --min=<minimumValue> --max=<maximumValue>
+    kubectl autoscale deployment hpa-demo-deployment --cpu-percent=50 --min=1 --max=10
+    kubectl run -i --tty load-generator --rm --image=busybox:1.28 --restart=Never -- /bin/sh -c "while sleep 0.01; do wget -q -O- http://php-apache; done"
+
+NOTE: This creates an autoscaler that targets 50 percent CPUutilization with a minimum of one pod and maximum of 10 pods.
+
+When the average CPU load is below 50% the autoscaler tries to reduce the number of pods in teh deploymnet to a minimum of 1
+
+When the load is greater than 50% the autoscaler increases the number of pods in the deploymnet up to a maximum of ten
+
+Template for the weather app
+
+    kubectl autoscale deployment weatherapp --cpu-percent=50 --min=1 --max=10
+
+    kubectl run -i --tty load-generator --rm --image=httpd -- ab -n 500000 -c 1000 http://weather-svc.wfa.svc.cluster.local/ 
+
+    kubectl get hpa netflix-app --watch
+
+Template for the netflix app
+
+    kubectl autoscale deployment netflix-app --cpu-percent=50 --min=1 --max=10
+
+    kubectl run -i --tty load-generator --rm --image=httpd -- ab -n 500000 -c 1000 http://netflix-svc.wfa.svc.cluster.local/ 
+
+    kubectl get hpa hpa-weatherapp --watch
+
+Template for the joomla app
+
+    kubectl autoscale deployment myapp-joomla --cpu-percent=50 --min=1 --max=10
+
+    kubectl run -i --tty load-generator --rm --image=httpd -- ab -n 500000 -c 1000 http://joomla-svc.wfa.svc.cluster.local/ 
+
+    kubectl get hpa hpa-joomla-app --watch
+    
+
+https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/
+
+
+- Using an declarative approach  
+
+Create a HPA k8s manifest 
+
+3) verify how HPA is working   
+
+In a separate terminal observe how the following changes
+
+    # List all HPA
+    kubectl get hpa
+
+    # List specific HPA
+    kubectl get hpa hpa-demo-deployment 
+
+    # Describe HPA
+    kubectl describe hpa/hpa-demo-deployment 
+
+    # List Pods
+    kubectl get pods
+
+# STEP 7:  Additonal resources to be configured next
+
+- Monitoring solution with prometheus and grafana 
+- Create pod disruption budget
