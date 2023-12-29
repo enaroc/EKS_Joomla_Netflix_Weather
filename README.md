@@ -578,15 +578,15 @@ run the following commands:
     evicting pod wfa/weatherapp-6964cb6b46-5jhq4
     error when evicting pods/"weatherapp-6964cb6b46-5jhq4" -n "wfa" (will retry after 5s): Cannot evict pod as it would violate the pod's disruption budget.
 
-    
+
     kubectl uncordon <node>
 
-# STEP 8:  Monitoring solution with prometheus and Grafana using Helm
+# STEP 8:  Monitoring solution with Prometheus and Grafana using Helm
 
-- Monitoring solution with prometheus and grafana 
-
--- Install Helm using instructions from the Helm official documentation
+-- We've installed Helm in Step 4 using instructions from the Helm official documentation
     https://helm.sh/docs/intro/install/
+
+-- Coming shortly 
 
 
 
