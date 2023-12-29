@@ -4,6 +4,7 @@
 
 ![Alt text](/images/weather.png)
 
+
 For this project we will deploy 3 applications in a kubernetes cluster (Amazon EKS). These applications should be accessible from the external load balancer and we should have a monitoring solution to gain visibility in what is happening in the cluster.
 
 We will be deploying the following:
@@ -539,34 +540,54 @@ In a separate terminal observe how the following changes
     # List Pods
     kubectl get pods
 
-# STEP 7:  Additonal resources to be configured next
+
+# STEP 7:  Create pod disruption budget (PDB)
+
+- Create pod disruption budget
+
+What is PDB ?
+
+Pod disruption budget is used  to ensure that we don't delete any pod that is running.
+
+Use case:
+
+For example: 
+
+During maintenance of our kubernetes cluster we want to patch one node before moving to another. To do so we cordon the node and once it is cordoned no job available to schedule on it.   
+
+Pod disruption budget allow us to have the application continuously running and helps  to prevent mistake from non technical staff or technician where you can't remove what is deployed 
+
+It helps to make your infrastructure highly available.
+
+
+
+
+run the following commands:
+
+    kubectl apply -f pdb.yaml
+
+    kubectl cordon <node> 
+    
+    kubectl drain  <node > --ignore-daemonsets --delete-emptydir-data # if you have a PDB deployed it will ensure that you cannot evict pods
+
+    Observe:
+
+    error when evicting pods/"weatherapp-6964cb6b46-5jhq4" -n "wfa" (will retry after 5s): Cannot evict pod as it would violate the pod's disruption budget.
+    evicting pod wfa/weatherapp-6964cb6b46-5jhq4
+    error when evicting pods/"weatherapp-6964cb6b46-5jhq4" -n "wfa" (will retry after 5s): Cannot evict pod as it would violate the pod's disruption budget.
+    evicting pod wfa/weatherapp-6964cb6b46-5jhq4
+    error when evicting pods/"weatherapp-6964cb6b46-5jhq4" -n "wfa" (will retry after 5s): Cannot evict pod as it would violate the pod's disruption budget.
+
+    
+    kubectl uncordon <node>
+
+# STEP 8:  Monitoring solution with prometheus and Grafana using Helm
 
 - Monitoring solution with prometheus and grafana 
 
 -- Install Helm using instructions from the Helm official documentation
     https://helm.sh/docs/intro/install/
 
--- Add the prometheus and Grafana repositories to Helm
 
 
-
-- Create pod disruption budget
-
-What is PDB ?
-
-Pod disruption budget we use it to ensure that we don't delete any pod that is running.
-
-Use cases: During maintenance we want to maintian our k8s cluster we want to patch one node before moving to another we cordon the node
-When a node is cordoned no job available to schedule on it.   
-kubectl cordon <node> ; then kubectl drain  to drain the node kubectl drain <node > --ignore-daemonsets --delete-emptydir-data  if you have a PDB deployed it will ensure that you cannot evict 
-
-It'll allow us to have the application continuously running it helps prevent mistake from non technical staff or technician
-You can't remove waht is deployed 
-
-Helps to make your infrastructure highly available.
-Argo cd recreate waht is deleted immediately you won't even notice it
-
-kubectl uncordon <node>
-
-Companies are moving from tomcat server to kubernetes
 
