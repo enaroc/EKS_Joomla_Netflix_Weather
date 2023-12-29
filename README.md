@@ -543,7 +543,6 @@ In a separate terminal observe how the following changes
 
 # STEP 7:  Create pod disruption budget (PDB)
 
-- Create pod disruption budget
 
 What is PDB ?
 
@@ -551,24 +550,20 @@ Pod disruption budget is used  to ensure that we don't delete any pod that is ru
 
 Use case:
 
-For example: 
-
 During maintenance of our kubernetes cluster we want to patch one node before moving to another. To do so we cordon the node and once it is cordoned no job available to schedule on it.   
 
 Pod disruption budget allow us to have the application continuously running and helps  to prevent mistake from non technical staff or technician where you can't remove what is deployed 
 
-It helps to make your infrastructure highly available.
+It helps to make our infrastructure highly available.
 
 
-
-
-run the following commands:
+Run the following commands:
 
     kubectl apply -f pdb.yaml
 
     kubectl cordon <node> 
     
-    kubectl drain  <node > --ignore-daemonsets --delete-emptydir-data # if you have a PDB deployed it will ensure that you cannot evict pods
+    kubectl drain  <node > --ignore-daemonsets --delete-emptydir-data # when you have a PDB deployed it will ensure that you cannot evict pods
 
     Observe:
 
