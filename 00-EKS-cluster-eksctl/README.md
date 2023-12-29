@@ -4,6 +4,7 @@
 - Install and configure AWS CLI
 - Install kubectl
 - Install eksctl
+- Install helm cli
 
 # STEP-01: CREATE EKS CLUSTER
 
@@ -80,7 +81,6 @@ We then add the following option to the command --node-private-networking to cre
                             --alb-ingress-access \
                             --node-private-networking
 
-![Alt text](private-node-group.png)
 
 -- To verify EKS Node groups
 
@@ -93,11 +93,13 @@ We then add the following option to the command --node-private-networking to cre
 -- To verify if any IAM Service Accounts present in EKS Cluster
 
     eksctl get iamserviceaccount --cluster=jms-cluster
-    observation: 
+
+    Observation: 
     1. No iamserviceaccounts found
 
 When we create an EKS cluster automatically a kube config will be created located in 
-$ cat $HOME/.kube/config
+
+    $ cat $HOME/.kube/config
 
 
 # STEP-03: Create EBS CSI DRIVER 
@@ -171,7 +173,7 @@ rolearn: arn:aws:iam::180789647333:role/eksctl-eksdemo1-nodegroup-eksdemo-NodeIn
     kubectl get pods -n kube-system
 
 
-#  STEP-04: Create an External dns 
+#  STEP-04: Create an External dns policy
 
 -- Create IAM Policy
 -- Name: AllowExternalDNSUpdates
@@ -205,7 +207,7 @@ rolearn: arn:aws:iam::180789647333:role/eksctl-eksdemo1-nodegroup-eksdemo-NodeIn
 
 # STEP-05: Create IAM, k8s Service Account and Associate IAM policy
 
--- This step create a k8s service account and AWS IAM role and associate them by annotating the role ARN in Service Account
+-- This step create a k8s service account and AWS IAM role and associate them by annotating the policy ARN in Service Account
 
         eksctl create iamserviceaccount \
             --name ext-dns \
@@ -215,7 +217,7 @@ rolearn: arn:aws:iam::180789647333:role/eksctl-eksdemo1-nodegroup-eksdemo-NodeIn
             --approve \
             --override-existing-serviceaccounts
 
--- Get the IAM Role ARN with teh below command 
+-- Get the IAM Role ARN with the below command 
 
      eksctl get iamserviceaccount --cluster jms-cluster
 
@@ -245,7 +247,9 @@ rolearn: arn:aws:iam::180789647333:role/eksctl-eksdemo1-nodegroup-eksdemo-NodeIn
 -- Delete Node Group
 
     eksctl delete nodegroup --cluster=<clusterName> --name=<nodegroupName>
+
     eksctl delete nodegroup --cluster=<clusterName> --name=<nodegroupName> --drain=false
+
 # STEP-07: DELETE CLUSTER
 
 -- Delete Cluster
