@@ -1,5 +1,7 @@
 # Cloud - Kubernetes Project
 
+![Alt text](../images/netflix.png)
+
 For this project we will deploy 3 applications in a kubernetes cluster (Amazon EKS). These applications should be accessible from the external load balancer and we should have a monitoring solution to gain visibility in what is happening in the cluster.
 
 We will be deploying the following:
@@ -20,8 +22,13 @@ For this project we will be required to:
 
 02-Weather = source code + manifests for Weather Flask application
 
-03-Django_netflix = source code + manifests for netflix application
+03-Netflix = source code + manifests for netflix application
 
+04-Ingress-ExternalDNS = ingress class + external dns deployments + ALB ingress
+
+05- 
+
+06-HPA =
 
 # What's Amazon EKS ?
 
@@ -533,4 +540,31 @@ In a separate terminal observe how the following changes
 # STEP 7:  Additonal resources to be configured next
 
 - Monitoring solution with prometheus and grafana 
+
+-- Install Helm using instructions from the Helm official documentation
+    https://helm.sh/docs/intro/install/
+
+-- Add the prometheus and Grafana repositories to Helm
+
+
+
 - Create pod disruption budget
+
+What is PDB ?
+
+Pod disruption budget we use it to ensure that we don't delete any pod that is running.
+
+Use cases: During maintenance we want to maintian our k8s cluster we want to patch one node before moving to another we cordon the node
+When a node is cordoned no job available to schedule on it.   
+kubectl cordon <node> ; then kubectl drain  to drain the node kubectl drain <node > --ignore-daemonsets --delete-emptydir-data  if you have a PDB deployed it will ensure that you cannot evict 
+
+It'll allow us to have the application continuously running it helps prevent mistake from non technical staff or technician
+You can't remove waht is deployed 
+
+Helps to make your infrastructure highly available.
+Argo cd recreate waht is deleted immediately you won't even notice it
+
+kubectl uncordon <node>
+
+Companies are moving from tomcat server to kubernetes
+
