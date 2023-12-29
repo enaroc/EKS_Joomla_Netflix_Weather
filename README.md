@@ -2,13 +2,15 @@
 
 ![Alt text](/images/netflix.png)
 
+![Alt text](/images/weather.png)
+
 For this project we will deploy 3 applications in a kubernetes cluster (Amazon EKS). These applications should be accessible from the external load balancer and we should have a monitoring solution to gain visibility in what is happening in the cluster.
 
 We will be deploying the following:
 
-- Joomla image
 - Netflix clone
 - Weather flask app
+- Joomla image
 
 For this project we will be required to:
 
