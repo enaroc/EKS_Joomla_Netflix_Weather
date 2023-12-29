@@ -1,6 +1,6 @@
 # Cloud - Kubernetes Project
 
-![Alt text](../images/netflix.png)
+![Alt text](/images/netflix.png)
 
 For this project we will deploy 3 applications in a kubernetes cluster (Amazon EKS). These applications should be accessible from the external load balancer and we should have a monitoring solution to gain visibility in what is happening in the cluster.
 
